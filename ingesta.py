@@ -1,25 +1,42 @@
 import boto3
 import pandas as pd
+import os
+
 from sqlalchemy import create_engine
+from dotenv import load_dotenv
 
 # =========================
-# CONFIGURACION MYSQL
+# CARGAR VARIABLES .ENV
 # =========================
 
-usuario = "root"
-password = "123456"
-host = "host.docker.internal"
-puerto = "3306"
-database = "empresa"
-
-tabla = "clientes"
+load_dotenv()
 
 # =========================
-# CONFIGURACION S3
+# MYSQL
 # =========================
 
-ficheroUpload = "data.csv"
-nombreBucket = "gcr-output-01"
+usuario = os.getenv("MYSQL_USER")
+password = os.getenv("MYSQL_PASSWORD")
+host = os.getenv("MYSQL_HOST")
+puerto = os.getenv("MYSQL_PORT")
+database = os.getenv("MYSQL_DATABASE")
+tabla = os.getenv("MYSQL_TABLE")
+
+# =========================
+# AWS
+# =========================
+
+aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
+aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+aws_region = os.getenv("AWS_REGION")
+
+bucket_name = os.getenv("S3_BUCKET")
+
+# =========================
+# CSV
+# =========================
+
+archivo_csv = os.getenv("CSV_FILE")
 
 # =========================
 # CONEXION MYSQL
@@ -30,7 +47,7 @@ conexion = create_engine(
 )
 
 # =========================
-# LEER DATOS MYSQL
+# LEER TABLA MYSQL
 # =========================
 
 query = f"SELECT * FROM {tabla}"
@@ -41,22 +58,30 @@ df = pd.read_sql(query, conexion)
 # GENERAR CSV
 # =========================
 
-df.to_csv(ficheroUpload, index=False)
+df.to_csv(archivo_csv, index=False)
 
 print("CSV generado correctamente")
+
+# =========================
+# CONEXION S3
+# =========================
+
+s3 = boto3.client(
+    's3',
+    aws_access_key_id=aws_access_key,
+    aws_secret_access_key=aws_secret_key,
+    region_name=aws_region
+)
 
 # =========================
 # SUBIR CSV A S3
 # =========================
 
-s3 = boto3.client('s3')
-
-response = s3.upload_file(
-    ficheroUpload,
-    nombreBucket,
-    ficheroUpload
+s3.upload_file(
+    archivo_csv,
+    bucket_name,
+    archivo_csv
 )
 
 print("Archivo subido a S3")
-
 print("Ingesta completada")
