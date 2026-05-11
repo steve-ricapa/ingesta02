@@ -28,6 +28,7 @@ tabla = os.getenv("MYSQL_TABLE")
 
 aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
 aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+aws_session_token = os.getenv("AWS_SESSION_TOKEN")
 aws_region = os.getenv("AWS_REGION")
 
 bucket_name = os.getenv("S3_BUCKET")
@@ -47,7 +48,7 @@ conexion = create_engine(
 )
 
 # =========================
-# LEER TABLA MYSQL
+# LEER DATOS MYSQL
 # =========================
 
 query = f"SELECT * FROM {tabla}"
@@ -55,7 +56,7 @@ query = f"SELECT * FROM {tabla}"
 df = pd.read_sql(query, conexion)
 
 # =========================
-# GENERAR CSV
+# CREAR CSV
 # =========================
 
 df.to_csv(archivo_csv, index=False)
@@ -70,11 +71,12 @@ s3 = boto3.client(
     's3',
     aws_access_key_id=aws_access_key,
     aws_secret_access_key=aws_secret_key,
+    aws_session_token=aws_session_token,
     region_name=aws_region
 )
 
 # =========================
-# SUBIR CSV A S3
+# SUBIR ARCHIVO A S3
 # =========================
 
 s3.upload_file(
